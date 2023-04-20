@@ -32,6 +32,7 @@ public class MembersDAO {
                 int year = rs.getInt("YEAR");
                 Date regDate = rs.getDate("REG_DATE");
                 String pfImg = rs.getString("PF_IMG");
+                String isWithDrawn = rs.getString("IS_WITHDRAWN");
 
                 MembersVO vo = new MembersVO();
                 vo.setMemberNum(memberNum);
@@ -43,6 +44,7 @@ public class MembersDAO {
                 vo.setYear(year);
                 vo.setRegDate(regDate);
                 vo.setPfImg(pfImg);
+                vo.setIsWithDrawn(isWithDrawn);
 
                 list.add(vo);
             }

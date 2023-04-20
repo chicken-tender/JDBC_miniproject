@@ -12,8 +12,9 @@ public class MembersVO {
     private int year;
     private Date regDate;
     private String pfImg;
+    private String isWithDrawn;
 
-    public MembersVO(int memberNum, int gradeNum, String email, String pwd, String nickName, String job, int year, Date regDate, String pfImg) {
+    public MembersVO(int memberNum, int gradeNum, String email, String pwd, String nickName, String job, int year, Date regDate, String pfImg, String isWithDrawn) {
         this.memberNum = memberNum;
         this.gradeNum = gradeNum;
         this.email = email;
@@ -23,6 +24,7 @@ public class MembersVO {
         this.year = year;
         this.regDate = regDate;
         this.pfImg = pfImg;
+        this.isWithDrawn = isWithDrawn;
     }
     public MembersVO() {
 
@@ -98,5 +100,13 @@ public class MembersVO {
 
     public void setPfImg(String pfImg) {
         this.pfImg = pfImg;
+    }
+
+    public String getIsWithDrawn() {
+        return isWithDrawn;
+    }
+
+    public void setIsWithDrawn(String isWithDrawn) {
+        this.isWithDrawn = isWithDrawn;
     }
 }
