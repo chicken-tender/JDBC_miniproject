@@ -46,11 +46,21 @@ public class MembersDAO {
 
                 list.add(vo);
             }
+            Common.close(rs);
+            Common.close(stmt);
+            Common.close(conn);
 
         } catch (Exception e) {
             e.printStackTrace();
         }
         return list;
+    }
+
+    public void printMembers(List<MembersVO> list) {
+        for(MembersVO e : list) {
+            System.out.print(e.getEmail() + " ");
+            System.out.println();
+        }
     }
 }
 

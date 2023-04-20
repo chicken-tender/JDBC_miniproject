@@ -40,7 +40,7 @@ public class Common {
             e.printStackTrace();
         }
     }
-    public static void Close(ResultSet rSet) {
+    public static void close(ResultSet rSet) {
         try {
             if(rSet != null && !rSet.isClosed()) {
                 rSet.close();
