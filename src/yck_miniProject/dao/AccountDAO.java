@@ -10,7 +10,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MembersDAO {
+public class AccountDAO {
     public List<MembersVO> listMembers() {
         Connection conn = null;
         Statement stmt = null;
