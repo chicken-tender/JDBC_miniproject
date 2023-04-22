@@ -30,7 +30,6 @@ public class JdbcMain {
                 System.out.println(post.getTitle() + " (" + post.getNickname() + ")");
             }
         }
-
 //
 //        BoardDAO bdao = new BoardDAO();
 //        List<ReplyVO> postList = bdao.viewReply(14);
