@@ -98,7 +98,7 @@ public class ChattingDAO {
     }
 
     // ✨매칭 성공시 멘토 프로필 사진, 닉네임 get
-    public List<MembersVO> getMentorProfileByEmail(int mentorMemberNum) {
+    public List<MembersVO> getMentorProfileByMemberNum(int mentorMemberNum) {
         List<MembersVO> list = new ArrayList<>();
         String sql = "SELECT PF_IMG, NICKNAME " +
                 "FROM MEMBERS_TB " +
