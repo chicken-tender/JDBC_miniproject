@@ -29,6 +29,10 @@ public class MembersVO {
     public MembersVO() {
 
     }
+    public MembersVO(String pfImg, String nickName) {
+        this.pfImg = pfImg;
+        this.nickName = nickName;
+    }
 
     public int getMemberNum() {
         return memberNum;

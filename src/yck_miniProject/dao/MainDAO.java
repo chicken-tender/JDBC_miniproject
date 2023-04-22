@@ -12,7 +12,6 @@ import java.util.List;
 
 public class MainDAO {
     private Connection conn = null;
-    private Statement stmt = null;
     private ResultSet rs = null;
     private PreparedStatement pstmt = null;
 
