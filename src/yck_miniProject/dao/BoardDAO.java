@@ -327,7 +327,7 @@ public class BoardDAO {
         return result;
     }
 
-    // ✨댓글 보기
+    // ✨댓글 보기(프로필이미지, 댓글작성자 닉네임, 내용, 작성날짜)
     public List<ReplyVO> viewReply(int postNum) {
         String sql = "SELECT M.PF_IMG, M.NICKNAME, R.REPLY_CONTENT, R.WRITE_DATE " +
                 "FROM REPLY_TB R " +
