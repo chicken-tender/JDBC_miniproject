@@ -15,8 +15,9 @@ public class BoardDAO {
     private ResultSet rs = null;
     private PreparedStatement pstmt = null;
 
+
     // ✨일반 게시판 글 목록 (한 페이지당 10개씩)
-    public List<PostVO> GeneralPostList(int boardNum, int pageNum) {
+    public List<PostVO> generalPostList(int pageNum, int boardNum) {
         int numPerPage = 10; // 페이지 당 보여주는 항목 개수
         List<PostVO> list = new ArrayList<>();
         int startRow = (pageNum - 1) * numPerPage + 1;
@@ -32,7 +33,6 @@ public class BoardDAO {
                 "JOIN MEMBERS_TB M ON P.MEMBER_NUM_FK = M.MEMBER_NUM_PK " +
                 "WHERE P.RN BETWEEN ? AND ? " +
                 "ORDER BY WRITE_DATE DESC";
-
 
         try {
             conn = Common.getConnection();
@@ -66,9 +66,108 @@ public class BoardDAO {
     }
 
 
-    // ✨포트폴리오 게시판 글 목록 (한 페이지당 6개씩)
+    //✨ 베스트 게시판 글 목록 (추천수 100개 이상 게시물)
+    public List<PostVO> bestPostList(int pageNum) {
+        int numPerPage = 10;
+        int startRow = (pageNum - 1) * numPerPage + 1;
+        int endRow = pageNum * numPerPage;
 
-    public List<PostVO> PortfolioList(int pageNum) {
+        List<PostVO> list = new ArrayList<>();
+
+        String sql = "SELECT P.POST_NUM_PK, P.TITLE, M.NICKNAME, P.WRITE_DATE, P.VIEW_COUNT, P.LIKE_COUNT " +
+                "FROM ( " +
+                "  SELECT POST_NUM_PK, TITLE, MEMBER_NUM_FK, WRITE_DATE, VIEW_COUNT, LIKE_COUNT, " +
+                "  ROW_NUMBER() OVER (ORDER BY WRITE_DATE DESC) AS RN " +
+                "  FROM POST_TB " +
+                "  WHERE BOARD_NUM_FK = 2 AND LIKE_COUNT >= 100 " +
+                ") P " +
+                "JOIN MEMBERS_TB M ON P.MEMBER_NUM_FK = M.MEMBER_NUM_PK " +
+                "WHERE P.RN BETWEEN ? AND ? " +
+                "ORDER BY WRITE_DATE DESC";
+        try {
+            conn = Common.getConnection();
+            pstmt = conn.prepareStatement(sql);
+
+            pstmt.setInt(1, startRow);
+            pstmt.setInt(2, endRow);
+
+            rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                PostVO pv = new PostVO();
+                pv.setPostNum(rs.getInt("POST_NUM_PK"));
+                pv.setTitle(rs.getString("TITLE"));
+                pv.setWriteDate(rs.getDate("WRITE_DATE"));
+                pv.setNickname(rs.getString("NICKNAME"));
+                pv.setViewCount(rs.getInt("VIEW_COUNT"));
+                pv.setLikeCount(rs.getInt("LIKE_COUNT"));
+                list.add(pv);
+            }
+
+            Common.close(rs);
+            Common.close(pstmt);
+            Common.close(conn);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+
+    }
+
+    // ✨정보공유 게시판 글 목록 (추천수 100개 이하)
+    public List<PostVO> infoSharingPostList(int pageNum) {
+        int numPerPage = 10;
+        int startRow = (pageNum - 1) * numPerPage + 1;
+        int endRow = pageNum * numPerPage;
+
+        List<PostVO> list = new ArrayList<>();
+
+        String sql = "SELECT P.POST_NUM_PK, P.TITLE, M.NICKNAME, P.WRITE_DATE, P.VIEW_COUNT, P.LIKE_COUNT " +
+                "FROM ( " +
+                "  SELECT POST_NUM_PK, TITLE, MEMBER_NUM_FK, WRITE_DATE, VIEW_COUNT, LIKE_COUNT, " +
+                "  ROW_NUMBER() OVER (ORDER BY WRITE_DATE DESC) AS RN " +
+                "  FROM POST_TB " +
+                "  WHERE BOARD_NUM_FK = 2 AND LIKE_COUNT < 100 " +
+                ") P " +
+                "JOIN MEMBERS_TB M ON P.MEMBER_NUM_FK = M.MEMBER_NUM_PK " +
+                "WHERE P.RN BETWEEN ? AND ? " +
+                "ORDER BY WRITE_DATE DESC";
+
+        try {
+            conn = Common.getConnection();
+            pstmt = conn.prepareStatement(sql);
+
+            pstmt.setInt(1, startRow);
+            pstmt.setInt(2, endRow);
+
+            rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                PostVO pv = new PostVO();
+                pv.setPostNum(rs.getInt("POST_NUM_PK"));
+                pv.setTitle(rs.getString("TITLE"));
+                pv.setWriteDate(rs.getDate("WRITE_DATE"));
+                pv.setNickname(rs.getString("NICKNAME"));
+                pv.setViewCount(rs.getInt("VIEW_COUNT"));
+                pv.setLikeCount(rs.getInt("LIKE_COUNT"));
+                list.add(pv);
+            }
+
+            Common.close(rs);
+            Common.close(pstmt);
+            Common.close(conn);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
+
+
+    // ✨포트폴리오 게시판 글 목록 (한 페이지당 6개씩)
+    public List<PostVO> portfolioList(int pageNum) {
         int numPerPage = 6;
         List<PostVO> list = new ArrayList<>();
         int startRow = (pageNum - 1) * numPerPage + 1;
@@ -110,6 +209,7 @@ public class BoardDAO {
         }
         return list;
     }
+
 
     // ✨해당 게시판 게시글 검색
     public List<PostVO> searchPosts(String keyword, int pageNum, int boardNum) {
@@ -206,9 +306,10 @@ public class BoardDAO {
         return list;
     }
 
+
     // ✨ 게시글 작성
     public void writePost(PostVO post) {
-        String sql ="INSERT INTO POST_TB (TITLE, CONTENT, TAG, IMG_URL, VIEW_COUNT, LIKE_COUNT, WRITE_DATE, BOARD_NUM_FK) " +
+        String sql = "INSERT INTO POST_TB (TITLE, CONTENT, TAG, IMG_URL, VIEW_COUNT, LIKE_COUNT, WRITE_DATE, BOARD_NUM_FK) " +
                 "VALUES (?, ?, ?, ?, 0, 0, SYSDATE, (SELECT BOARD_NUM FROM BOARD_TB WHERE BOARD_NAME = ?))";
 
         Connection conn = null;
@@ -261,6 +362,7 @@ public class BoardDAO {
         }
     }
 
+
     // ✨ 게시글 삭제
     public void deletePost(int postNum) {
         String sql = "DELETE FROM POST_TB WHERE POST_NUM_PK = ?";
@@ -282,6 +384,7 @@ public class BoardDAO {
         }
     }
 
+
     // ✨게시글 조회수 증가
     public int increaseViews(int postNum) {
         String sql = "UPDATE POST_TB SET VIEW_COUNT = VIEW_COUNT + 1 WHERE POST_NUM_PK = ?";
@@ -291,19 +394,21 @@ public class BoardDAO {
 
         int result = 0;
         try {
-                conn = Common.getConnection();
-                pstmt = conn.prepareStatement(sql);
-                pstmt.setInt(1, postNum);
-                result = pstmt.executeUpdate();
+            conn = Common.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, postNum);
+            result = pstmt.executeUpdate();
 
-                Common.close(pstmt);
-                Common.close(conn);
+            Common.close(pstmt);
+            Common.close(conn);
 
         } catch (Exception e) {
             e.printStackTrace();
         }
         return result;
     }
+
+
     // ✨게시글 추천수 증가
     public int increaseLikes(int postNum) {
         String sql = "UPDATE POST_TB SET LIKE_COUNT = LIKE_COUNT + 1 WHERE POST_NUM_PK = ?";
@@ -327,12 +432,15 @@ public class BoardDAO {
         return result;
     }
 
+
     // ✨댓글 보기(프로필이미지, 댓글작성자 닉네임, 내용, 작성날짜)
-    public List<ReplyVO> viewReply(int postNum) {
+    public List<ReplyVO> viewReply(int postNum, int startIndex, int endIndex) {
         String sql = "SELECT M.PF_IMG, M.NICKNAME, R.REPLY_CONTENT, R.WRITE_DATE " +
                 "FROM REPLY_TB R " +
                 "JOIN MEMBERS_TB M ON R.MEMBER_NUM_FK = M.MEMBER_NUM_PK " +
-                "WHERE R.POST_NUM_FK = ?";
+                "WHERE R.POST_NUM_FK = ?" +
+                "AND R.REPLY_NUM_PK BETWEEN ? AND ? " +
+                "ORDER BY R.REPLY_NUM_PK ASC";
 
         List<ReplyVO> list = new ArrayList<>();
         Connection conn = null;
@@ -343,15 +451,17 @@ public class BoardDAO {
             conn = Common.getConnection();
             pstmt = conn.prepareStatement(sql);
             pstmt.setInt(1, postNum);
+            pstmt.setInt(2, startIndex);
+            pstmt.setInt(3, endIndex);
             rs = pstmt.executeQuery();
 
             while (rs.next()) {
-                ReplyVO reply = new ReplyVO();
-                reply.setPfImg(rs.getString("PF_IMG"));
-                reply.setNickname(rs.getString("NICKNAME"));
-                reply.setReplyContent(rs.getString("REPLY_CONTENT"));
-                reply.setWriteDate(rs.getDate("WRITE_DATE"));
-                list.add(reply);
+                ReplyVO rv = new ReplyVO();
+                rv.setPfImg(rs.getString("PF_IMG"));
+                rv.setNickname(rs.getString("NICKNAME"));
+                rv.setReplyContent(rs.getString("REPLY_CONTENT"));
+                rv.setWriteDate(rs.getDate("WRITE_DATE"));
+                list.add(rv);
             }
 
             Common.close(rs);
@@ -365,21 +475,42 @@ public class BoardDAO {
         return list;
     }
 
+
+    // ✨댓글 작성
+    public void insertReply(int postNum, int memberNum, String content) {
+        String sql = "INSERT INTO REPLY_TB (POST_NUM_FK, MEMBER_NUM_FK, REPLY_CONTENT, WRITE_DATE) " +
+                "VALUES (?, ?, ?, SYSDATE)";
+
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+
+        try {
+            conn = Common.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, postNum);
+            pstmt.setInt(2, memberNum);
+            pstmt.setString(3, content);
+            pstmt.executeUpdate();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
     // ✨댓글 수정
-    public int updateReply(int replyNum, String content) {
+    public void updateReply(int replyNum, String content) {
         String sql = "UPDATE REPLY_TB SET REPLY_CONTENT = ? WHERE REPLY_NUM_PK = ?";
 
         Connection conn = null;
         PreparedStatement pstmt = null;
-        int result = 0;
 
         try {
             conn = Common.getConnection();
             pstmt = conn.prepareStatement(sql);
             pstmt.setString(1, content);
             pstmt.setInt(2, replyNum);
-
-            result = pstmt.executeUpdate();
+            pstmt.executeUpdate();
 
             Common.close(pstmt);
             Common.close(conn);
@@ -387,24 +518,22 @@ public class BoardDAO {
         } catch (Exception e) {
             e.printStackTrace();
         }
-
-        return result;
     }
 
+
     // ✨댓글 삭제
-    public int deleteReply(int replyNum) {
+    public void deleteReply(int replyNum) {
         String sql = "DELETE FROM REPLY_TB WHERE REPLY_NUM_PK = ?";
 
         Connection conn = null;
         PreparedStatement pstmt = null;
-        int result = 0;
+
 
         try {
             conn = Common.getConnection();
             pstmt = conn.prepareStatement(sql);
             pstmt.setInt(1, replyNum);
-
-            result = pstmt.executeUpdate();
+            pstmt.executeUpdate();
 
             Common.close(pstmt);
             Common.close(conn);
@@ -413,11 +542,40 @@ public class BoardDAO {
             e.printStackTrace();
         }
 
-        return result;
     }
 
+    // ✨게시판 목록 표시
+    public List<BoardVO> boardList() {
+        Connection conn = null;
+        Statement stmt = null;
+        ResultSet rs = null;
+        List<BoardVO> boardList = new ArrayList<>();
 
+        try {
+            conn = Common.getConnection();
+            stmt = conn.createStatement();
+            String sql = "SELECT BOARD_NAME FROM BOARD_TB";
+            rs = stmt.executeQuery(sql);
+
+            while (rs.next()) {
+                String boardName = rs.getString("BOARD_NAME");
+
+                BoardVO vo = new BoardVO(boardName);
+                boardList.add(vo);
+            }
+            Common.close(rs);
+            Common.close(stmt);
+            Common.close(conn);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return boardList;
+
+    }
 
 }
+
+
 
 
