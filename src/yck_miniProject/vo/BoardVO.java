@@ -4,7 +4,7 @@ public class BoardVO {
     private int boardNum;
     private String boardName;
 
-    public BoardVO(int boardNum, String boardName) {
+    public BoardVO(String boardName) {
         this.boardNum = boardNum;
         this.boardName = boardName;
     }
