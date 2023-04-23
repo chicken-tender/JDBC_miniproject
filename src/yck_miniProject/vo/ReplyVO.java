@@ -8,13 +8,21 @@ public class ReplyVO {
     private int memberNum;
     private String replyContent;
     private Date writeDate;
+    private String nickname;
+    private String pfImg;
 
-    public ReplyVO(int replyNum, int postNum, int memberNum, String replyContent, Date writeDate) {
+    public ReplyVO(int replyNum, int postNum, int memberNum, String replyContent, Date writeDate, String nickname, String pfImg) {
         this.replyNum = replyNum;
         this.postNum = postNum;
         this.memberNum = memberNum;
         this.replyContent = replyContent;
         this.writeDate = writeDate;
+        this.nickname = nickname;
+        this.pfImg=pfImg;
+    }
+
+    public ReplyVO() {
+
     }
 
     public int getReplyNum() {
@@ -55,5 +63,20 @@ public class ReplyVO {
 
     public void setWriteDate(Date writeDate) {
         this.writeDate = writeDate;
+    }
+
+    public String getNickname() {
+        return nickname;
+    }
+    public void setNickname(String nickname) {
+        this.nickname = nickname;
+    }
+
+    public String getPfImg() {
+        return pfImg;
+    }
+
+    public void setPfImg(String pfImg) {
+        this.pfImg = pfImg;
     }
 }
