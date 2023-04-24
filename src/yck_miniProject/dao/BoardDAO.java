@@ -66,106 +66,23 @@ public class BoardDAO {
     }
 
 
-    //✨ 베스트 게시판 글 목록 (추천수 100개 이상 게시물)
-    public List<PostVO> bestPostList(int pageNum) {
-        int numPerPage = 10;
-        int startRow = (pageNum - 1) * numPerPage + 1;
-        int endRow = pageNum * numPerPage;
-
-        List<PostVO> list = new ArrayList<>();
-
-        String sql = "SELECT P.POST_NUM_PK, P.TITLE, M.NICKNAME, P.WRITE_DATE, P.VIEW_COUNT, P.LIKE_COUNT " +
-                "FROM ( " +
-                "  SELECT POST_NUM_PK, TITLE, MEMBER_NUM_FK, WRITE_DATE, VIEW_COUNT, LIKE_COUNT, " +
-                "  ROW_NUMBER() OVER (ORDER BY WRITE_DATE DESC) AS RN " +
-                "  FROM POST_TB " +
-                "  WHERE BOARD_NUM_FK = 2 AND LIKE_COUNT >= 100 " +
-                ") P " +
-                "JOIN MEMBERS_TB M ON P.MEMBER_NUM_FK = M.MEMBER_NUM_PK " +
-                "WHERE P.RN BETWEEN ? AND ? " +
-                "ORDER BY WRITE_DATE DESC";
-        try {
-            conn = Common.getConnection();
-            pstmt = conn.prepareStatement(sql);
-
-            pstmt.setInt(1, startRow);
-            pstmt.setInt(2, endRow);
-
-            rs = pstmt.executeQuery();
-
-            while (rs.next()) {
-                PostVO pv = new PostVO();
-                pv.setPostNum(rs.getInt("POST_NUM_PK"));
-                pv.setTitle(rs.getString("TITLE"));
-                pv.setWriteDate(rs.getDate("WRITE_DATE"));
-                pv.setNickname(rs.getString("NICKNAME"));
-                pv.setViewCount(rs.getInt("VIEW_COUNT"));
-                pv.setLikeCount(rs.getInt("LIKE_COUNT"));
-                list.add(pv);
-            }
-
-            Common.close(rs);
-            Common.close(pstmt);
-            Common.close(conn);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return list;
-
-    }
-
-    // ✨정보공유 게시판 글 목록 (추천수 100개 이하)
-    public List<PostVO> infoSharingPostList(int pageNum) {
-        int numPerPage = 10;
-        int startRow = (pageNum - 1) * numPerPage + 1;
-        int endRow = pageNum * numPerPage;
-
-        List<PostVO> list = new ArrayList<>();
-
-        String sql = "SELECT P.POST_NUM_PK, P.TITLE, M.NICKNAME, P.WRITE_DATE, P.VIEW_COUNT, P.LIKE_COUNT " +
-                "FROM ( " +
-                "  SELECT POST_NUM_PK, TITLE, MEMBER_NUM_FK, WRITE_DATE, VIEW_COUNT, LIKE_COUNT, " +
-                "  ROW_NUMBER() OVER (ORDER BY WRITE_DATE DESC) AS RN " +
-                "  FROM POST_TB " +
-                "  WHERE BOARD_NUM_FK = 2 AND LIKE_COUNT < 100 " +
-                ") P " +
-                "JOIN MEMBERS_TB M ON P.MEMBER_NUM_FK = M.MEMBER_NUM_PK " +
-                "WHERE P.RN BETWEEN ? AND ? " +
-                "ORDER BY WRITE_DATE DESC";
+    // ✨베스트 게시판으로 글 이동
+    public void updateBestBoard() {
+        String sql = "UPDATE POST_TB SET BOARD_NUM_FK = 5 WHERE BOARD_NUM_FK = 2 AND LIKE_COUNT >= 100";
 
         try {
             conn = Common.getConnection();
             pstmt = conn.prepareStatement(sql);
 
-            pstmt.setInt(1, startRow);
-            pstmt.setInt(2, endRow);
-
-            rs = pstmt.executeQuery();
-
-            while (rs.next()) {
-                PostVO pv = new PostVO();
-                pv.setPostNum(rs.getInt("POST_NUM_PK"));
-                pv.setTitle(rs.getString("TITLE"));
-                pv.setWriteDate(rs.getDate("WRITE_DATE"));
-                pv.setNickname(rs.getString("NICKNAME"));
-                pv.setViewCount(rs.getInt("VIEW_COUNT"));
-                pv.setLikeCount(rs.getInt("LIKE_COUNT"));
-                list.add(pv);
-            }
-
-            Common.close(rs);
-            Common.close(pstmt);
-            Common.close(conn);
+            pstmt.executeUpdate();
 
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-        return list;
     }
 
-
+    
     // ✨포트폴리오 게시판 글 목록 (한 페이지당 6개씩)
     public List<PostVO> portfolioList(int pageNum) {
         int numPerPage = 6;
@@ -219,11 +136,17 @@ public class BoardDAO {
         int endRow = pageNum * numPerPage;
 
         List<PostVO> list = new ArrayList<>();
+
         String sql = "SELECT P.POST_NUM_PK, P.TITLE, M.NICKNAME, P.VIEW_COUNT, P.LIKE_COUNT, P.WRITE_DATE " +
-                "FROM POST_TB P " +
+                "FROM ( " +
+                "  SELECT POST_NUM_PK, TITLE, CONTENT, TAG, MEMBER_NUM_FK, BOARD_NUM_FK, WRITE_DATE, MODIFY_DATE, VIEW_COUNT, LIKE_COUNT, " +
+                "         ROW_NUMBER() OVER (ORDER BY POST_NUM_PK DESC) AS RNUM " +
+                "  FROM POST_TB " +
+                "  WHERE BOARD_NUM_FK = ? AND (TITLE LIKE ? OR CONTENT LIKE ? OR TAG LIKE ?) " +
+                ") P "+
                 "JOIN MEMBERS_TB M ON P.MEMBER_NUM_FK = M.MEMBER_NUM_PK " +
                 "JOIN BOARD_TB B ON P.BOARD_NUM_FK = B.BOARD_NUM_PK " +
-                "WHERE (P.TITLE LIKE ? OR P.CONTENT LIKE ? OR P.TAG LIKE ?) AND P.BOARD_NUM_FK = ? " +
+                "WHERE RNUM BETWEEN ? AND ?" +
                 "ORDER BY P.POST_NUM_PK DESC";
         try {
             conn = Common.getConnection();
@@ -409,18 +332,51 @@ public class BoardDAO {
     }
 
 
-    // ✨게시글 추천수 증가
-    public int increaseLikes(int postNum) {
-        String sql = "UPDATE POST_TB SET LIKE_COUNT = LIKE_COUNT + 1 WHERE POST_NUM_PK = ?";
+    // ✨게시글 좋아요 업데이트
+    public int updateLikes(int postNum, int memberId) {
+        // 회원(memberId)이 특정 게시물(postNum)에 이미 좋아요를 눌렀는지 확인
+        String checkSql = "SELECT COUNT(*) FROM LIKES_TB WHERE POST_NUM_FK = ? AND MEMBER_NUM_FK = ?";
+        // 좋아요가 없을 때, 새로운 좋아요 추가
+        String insertSql = "INSERT INTO LIKES_TB (POST_NUM_FK, MEMBER_NUM_FK) VALUES (?, ?)";
+        // 좋아요가 이미 있을 때, (좋아요 두번 클릭) 기존 좋아요를 삭제 (중복 방지)
+        String deleteSql = "DELETE FROM Likes WHERE POST_NUM_FK = ? AND MEMBER_NUM_FK = ?";
+        // POST_TB의 LIKE_COUNT 업데이트
+        String updatePostSql = "UPDATE POST_TB SET LIKE_COUNT = (SELECT COUNT(*) FROM Likes WHERE POST_NUM_FK = ?) WHERE POST_NUM_PK = ?";
 
         Connection conn = null;
         PreparedStatement pstmt = null;
+        ResultSet rs = null;
 
         int result = 0;
         try {
             conn = Common.getConnection();
-            pstmt = conn.prepareStatement(sql);
+            pstmt = conn.prepareStatement(checkSql);
             pstmt.setInt(1, postNum);
+            pstmt.setInt(2, memberId);
+            rs = pstmt.executeQuery();
+            rs.next();
+            int isLiked = rs.getInt(1); // 첫번쨰 칼럼 값
+
+            Common.close(rs);
+            Common.close(pstmt);
+            Common.close(conn);
+
+            if (isLiked == 0) { // 좋아요가 없다면(0)
+                pstmt = conn.prepareStatement(insertSql);
+                pstmt.setInt(1, postNum);
+                pstmt.setInt(2, memberId);
+                pstmt.executeUpdate();
+            } else { // 좋아요 있으면 삭제
+                pstmt = conn.prepareStatement(deleteSql);
+                pstmt.setInt(1, postNum);
+                pstmt.setInt(2, memberId);
+                pstmt.executeUpdate();
+            }
+            Common.close(pstmt);
+
+            pstmt = conn.prepareStatement(updatePostSql);
+            pstmt.setInt(1, postNum);
+            pstmt.setInt(2, postNum);
             result = pstmt.executeUpdate();
 
             Common.close(pstmt);
@@ -544,7 +500,7 @@ public class BoardDAO {
 
     }
 
-    // ✨게시판 목록 표시
+    // ✨게시판 이름(목록) 표시
     public List<BoardVO> boardList() {
         Connection conn = null;
         Statement stmt = null;
@@ -573,6 +529,7 @@ public class BoardDAO {
         return boardList;
 
     }
+
 
 }
 

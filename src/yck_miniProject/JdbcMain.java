@@ -14,6 +14,18 @@ public class JdbcMain {
         MainDAO mdao = new MainDAO();
         List<TopWriterVO> t = mdao.getTopWriters();
         System.out.println(mdao.getTotalMemberCount());
+
+        BoardDAO boardDAO = new BoardDAO();
+        boardDAO.updateBestBoard();
+
+        List<PostVO> list = boardDAO.generalPostList(1,  5);
+        System.out.println("번호 | 제목 | 작성자 | 작성일 | 조회수 | 추천수");
+        for (PostVO e : list ) {
+            System.out.println(e.getPostNum() + " | " + e.getTitle() + " | " + e.getNickname()
+                    + " | " + e.getWriteDate() + " | " + e.getViewCount() + " | " + e.getLikeCount());
+        }
     }
-}
+
+    }
+
 
